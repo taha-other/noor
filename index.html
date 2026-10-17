@@ -60,7 +60,7 @@ button:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
 .chip[aria-pressed="true"]{background:var(--soft); border-color:var(--accent); font-weight:700}
 .offer-total{font-family:var(--mono); font-size:12px; color:var(--muted); margin:10px 0 0}
 
-.arena{position:relative; height:150px; border:1px dashed var(--line); border-radius:10px; overflow:hidden}
+.arena{position:relative; height:200px; border:1px dashed var(--line); border-radius:10px; overflow:hidden}
 .btn{font:inherit; font-weight:700; border-radius:10px; border:0; cursor:pointer; padding:14px 20px}
 .btn-yes{position:absolute; left:12px; bottom:12px; background:var(--accent); color:var(--accent-ink); font-size:17px; padding:16px 24px; transition:transform .12s}
 .btn-yes:hover{transform:translateY(-2px)}
@@ -156,7 +156,7 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
   </section>
 
   <section id="processing" class="panel" hidden>
-    <span class="lbl" style="margin:0">Sending your answer</span>
+    <span class="lbl" style="margin:0">Analyzing your answer</span>
     <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
     <ul class="steps" id="steps"></ul>
   </section>
@@ -170,7 +170,7 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
     <button type="button" class="btn btn-main" id="spin">Spin</button>
     <p class="tries" id="spinMsg" aria-live="polite" style="text-align:center"></p>
     <div class="retry" id="retryBox" hidden>
-      <p class="retry-q">do you wanna try againn avaa</p>
+      <p class="retry-q" id="retryQ">do you wanna try againn avaa</p>
       <div class="retry-actions">
         <button type="button" class="btn btn-main" id="retry">Try again</button>
         <button type="button" class="btn btn-ghost" id="cont">No, continue</button>
@@ -211,8 +211,8 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
 
   // runaway "still mad" button: jumps far across the screen, then gives up
   var arena = $('arena'), no = $('no'), yes = $('yes');
-  var dodges = 0, gaveUp = false, MAX_DODGES = 8, lastDodge = 0, flying = false;
-  var triesMsgs = ['', "You can't catch me.", 'Too slow.', 'Not even close.', 'Still not catching me.', 'Almost had me.', 'Getting tired.', 'One more.', 'Even the button wants you to say yes.'];
+  var dodges = 0, gaveUp = false, MAX_DODGES = 3, lastDodge = 0;
+  var triesMsgs = ['', "You can't catch me.", 'Too slow.', 'Even the button wants you to say yes.'];
 
   function overlaps(a, b){
     return !(a.x + a.w < b.x || b.x + b.w < a.x || a.y + a.h < b.y || b.y + b.h < a.y);
@@ -221,25 +221,13 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
     var now = Date.now();
     if (now - lastDodge < 350) return;
     lastDodge = now;
-    var r = no.getBoundingClientRect();
-    if (!flying){
-      // leave the box and move around the whole screen
-      no.style.transition = 'none';
-      no.style.position = 'fixed';
-      no.style.left = r.left + 'px';
-      no.style.top = r.top + 'px';
-      void no.offsetWidth;
-      no.style.transition = '';
-      flying = true;
-    }
-    var w = r.width, h = r.height, m = 12;
-    var W = document.documentElement.clientWidth || window.innerWidth, H = window.innerHeight;
-    var maxX = Math.max(m, W - w - m), maxY = Math.max(m, H - h - m);
-    var yr = yes.getBoundingClientRect();
-    var yz = {x: yr.left - 12, y: yr.top - 12, w: yr.width + 24, h: yr.height + 24};
-    var cx0 = r.left + w/2, cy0 = r.top + h/2;
-    var bx = m, by = m, best = -1;
-    for (var i=0;i<16;i++){
+    // stays inside the answer box so it never leaves the screen
+    var w = no.offsetWidth, h = no.offsetHeight, m = 6;
+    var maxX = Math.max(m, arena.clientWidth - w - m), maxY = Math.max(m, arena.clientHeight - h - m);
+    var yz = {x: yes.offsetLeft - 10, y: yes.offsetTop - 10, w: yes.offsetWidth + 20, h: yes.offsetHeight + 20};
+    var cx0 = no.offsetLeft + w/2, cy0 = no.offsetTop + h/2;
+    var bx = maxX, by = m, best = -1;
+    for (var i=0;i<20;i++){
       var x = m + Math.random()*(maxX - m), y = m + Math.random()*(maxY - m);
       if (overlaps({x:x, y:y, w:w, h:h}, yz)) continue;
       var d = Math.hypot(x + w/2 - cx0, y + h/2 - cy0);
@@ -270,6 +258,7 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
   var steps = [
     'Reading your answer',
     'Checking if you are still mad',
+    'Counting the snacks on offer',
     'Still mad? Running it again',
     'Warming up the Kinder Joys',
     'Done'
@@ -288,7 +277,7 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
       list.appendChild(li);
       return li;
     });
-    var gap = reduce ? 150 : 480, i = 0;
+    var gap = reduce ? 150 : 850, i = 0;
     (function next(){
       if (i > 0) lis[i-1].className = 'done';
       if (i >= lis.length){ $('barFill').style.width = '100%'; setTimeout(finish, reduce ? 100 : 250); return; }
@@ -312,7 +301,7 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
 
   // punishment wheel: always lands on "I forgive you" (last segment)
   var LABELS = ['Beat me', 'Punch me', 'No phone 1 day', 'Dishes x7', '2x Kinder Joys', 'I forgive you'];
-  var wheelCv = $('wheelCv'), wheel = $('wheel'), spinTurns = 5, spinCount = 0;
+  var wheelCv = $('wheelCv'), wheel = $('wheel'), spinTurns = 5, spinCount = 0, MAX_SPINS = 3;
   function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
   function drawWheel(){
     var s = wheelCv.clientWidth || 300, dpr = window.devicePixelRatio || 1;
@@ -351,7 +340,12 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
     wheel.style.transform = 'rotate(' + deg + 'deg)';
     spinCount++;
     setTimeout(function(){
+      var lastTry = spinCount >= MAX_SPINS;
       $('spinMsg').textContent = spinCount === 1 ? 'Punishment picked: I forgive you.' : 'Landed on I forgive you again.';
+      $('retryQ').textContent = lastTry ? 'now you will have to forgive me' : 'do you wanna try againn avaa';
+      $('retry').hidden = lastTry;
+      $('cont').className = lastTry ? 'btn btn-main' : 'btn btn-ghost';
+      $('cont').textContent = lastTry ? 'Okay, I forgive you' : 'No, continue';
       $('retryBox').hidden = false;
     }, reduce ? 300 : 3300);
   }
