@@ -11,7 +11,7 @@
 /* Layout: a personal note from him on top, then one answer box for her. Burgundy leads, pink is only for her name. */
 :root{
   --bg:#F7EFF1; --surface:#FFFFFF; --fg:#2B121A; --muted:#7D5C67; --line:#E8D5DB;
-  --accent:#7A1F3D; --accent-ink:#FFFFFF; --soft:#F4DEE4; --pink:#E64D7E;
+  --accent:#7A1F3D; --accent-ink:#FFFFFF; --soft:#F4DEE4; --pink:#E64D7E; --on-pink:#FFFFFF;
   --display:'Bricolage Grotesque','Trebuchet MS',system-ui,sans-serif;
   --body:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   --mono:'DM Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
@@ -19,13 +19,13 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#1B0E13; --surface:#27161D; --fg:#F6E9ED; --muted:#BC9CA6; --line:#41272F;
-    --accent:#D45B7D; --accent-ink:#1B0E13; --soft:#3A1B26; --pink:#FF7FA5;
+    --accent:#D45B7D; --accent-ink:#1B0E13; --soft:#3A1B26; --pink:#FF7FA5; --on-pink:#1B0E13;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
   --bg:#1B0E13; --surface:#27161D; --fg:#F6E9ED; --muted:#BC9CA6; --line:#41272F;
-  --accent:#D45B7D; --accent-ink:#1B0E13; --soft:#3A1B26; --pink:#FF7FA5;
+  --accent:#D45B7D; --accent-ink:#1B0E13; --soft:#3A1B26; --pink:#FF7FA5; --on-pink:#1B0E13;
   color-scheme:dark;
 }
 
@@ -66,12 +66,27 @@ button:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
 .btn-yes:hover{transform:translateY(-2px)}
 .btn-yes:active{transform:translateY(1px)}
 .btn-no{
-  position:absolute; left:calc(100% - 160px); top:12px; z-index:2;
+  position:absolute; left:calc(100% - 160px); top:12px; z-index:30;
   background:var(--surface); color:var(--fg); border:1px solid var(--line); font-size:14px; padding:10px 14px; white-space:nowrap;
-  transition:left .22s cubic-bezier(.3,1.4,.5,1), top .22s cubic-bezier(.3,1.4,.5,1), background .2s;
+  box-shadow:0 2px 10px rgba(0,0,0,.18);
+  transition:left .18s cubic-bezier(.2,.9,.3,1), top .18s cubic-bezier(.2,.9,.3,1), background .2s;
 }
 .btn-no.gave-up{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
 .tries{font-family:var(--mono); font-size:12px; color:var(--muted); margin:10px 0 0; min-height:1.5em}
+
+.wheel-wrap{position:relative; width:min(300px,100%); aspect-ratio:1; margin:0 auto}
+.wheel{width:100%; height:100%; transition:transform 3.2s cubic-bezier(.12,.7,.15,1)}
+.wheel canvas{display:block; width:100%; height:100%}
+.pointer{
+  position:absolute; top:-8px; left:50%; width:0; height:0; margin-left:-12px; z-index:3;
+  border-left:12px solid transparent; border-right:12px solid transparent; border-top:22px solid var(--fg);
+}
+.btn-main{background:var(--accent); color:var(--accent-ink); font-size:17px; padding:16px 24px; align-self:center}
+.btn-main:disabled{opacity:.6; cursor:default}
+.btn-ghost{background:transparent; color:var(--muted); text-decoration:underline; font-weight:500; font-size:14px; padding:8px 10px}
+.retry{display:flex; flex-direction:column; align-items:center; gap:12px}
+.retry-q{font-family:var(--display); font-weight:600; font-size:1.3rem; line-height:1.2; margin:0; text-align:center; text-wrap:balance}
+.retry-actions{display:flex; flex-wrap:wrap; gap:10px; justify-content:center; align-items:center}
 
 .steps{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:12px}
 .steps li{display:grid; grid-template-columns:22px 1fr; gap:10px; align-items:center; color:var(--muted); transition:color .2s}
@@ -90,7 +105,7 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
 .verdict p{margin:0; color:var(--muted)}
 .good-box{background:var(--soft); border-radius:10px; padding:14px 16px; color:var(--fg); font-weight:500}
 
-#confetti{position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:20}
+#confetti{position:fixed; inset:0; width:100%; height:100%; pointer-events:none; z-index:40}
 
 @media (prefers-reduced-motion: reduce){
   *{transition:none !important; animation-duration:.01ms !important}
@@ -123,6 +138,7 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
         <button type="button" class="chip" aria-pressed="true">Beat me</button>
         <button type="button" class="chip" aria-pressed="true">Punch me</button>
         <button type="button" class="chip" aria-pressed="true">Chotu for a week</button>
+        <button type="button" class="chip" aria-pressed="true">Beef patty burger, double patty</button>
       </div>
       <p class="offer-total" id="offerTotal" aria-live="polite"></p>
     </div>
@@ -143,6 +159,23 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
     <span class="lbl" style="margin:0">Sending your answer</span>
     <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
     <ul class="steps" id="steps"></ul>
+  </section>
+
+  <section id="spinner" class="panel" hidden>
+    <span class="lbl" style="margin:0">Pick my punishment</span>
+    <div class="wheel-wrap">
+      <div class="pointer" aria-hidden="true"></div>
+      <div class="wheel" id="wheel"><canvas id="wheelCv" role="img" aria-label="Punishment wheel with six options"></canvas></div>
+    </div>
+    <button type="button" class="btn btn-main" id="spin">Spin</button>
+    <p class="tries" id="spinMsg" aria-live="polite" style="text-align:center"></p>
+    <div class="retry" id="retryBox" hidden>
+      <p class="retry-q">do you wanna try againn avaa</p>
+      <div class="retry-actions">
+        <button type="button" class="btn btn-main" id="retry">Try again</button>
+        <button type="button" class="btn btn-ghost" id="cont">No, continue</button>
+      </div>
+    </div>
   </section>
 
   <section id="verdict" class="panel verdict" hidden>
@@ -176,27 +209,44 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
   });
   updOffers();
 
-  // runaway "still mad" button: dodges several times, then gives up
+  // runaway "still mad" button: jumps far across the screen, then gives up
   var arena = $('arena'), no = $('no'), yes = $('yes');
-  var dodges = 0, gaveUp = false, MAX_DODGES = 8;
-  var triesMsgs = ['', 'It moved.', 'Nice try.', 'Still moving.', 'It really does not want to be clicked.', 'Getting tired.', 'Almost out of energy.', 'One more.', 'Even the button wants you to say yes.'];
+  var dodges = 0, gaveUp = false, MAX_DODGES = 8, lastDodge = 0, flying = false;
+  var triesMsgs = ['', "You can't catch me.", 'Too slow.', 'Not even close.', 'Still not catching me.', 'Almost had me.', 'Getting tired.', 'One more.', 'Even the button wants you to say yes.'];
 
   function overlaps(a, b){
     return !(a.x + a.w < b.x || b.x + b.w < a.x || a.y + a.h < b.y || b.y + b.h < a.y);
   }
   function dodge(){
-    var w = no.offsetWidth, h = no.offsetHeight;
-    var maxX = Math.max(4, arena.clientWidth - w - 4);
-    var maxY = Math.max(4, arena.clientHeight - h - 4);
-    var yr = {x: yes.offsetLeft - 8, y: yes.offsetTop - 8, w: yes.offsetWidth + 16, h: yes.offsetHeight + 16};
-    var x = maxX, y = 4, ok = false;
-    for (var i=0;i<14;i++){
-      var cx = 4 + Math.random()*(maxX-4), cy = 4 + Math.random()*(maxY-4);
-      if (!overlaps({x:cx, y:cy, w:w, h:h}, yr)){ x = cx; y = cy; ok = true; break; }
+    var now = Date.now();
+    if (now - lastDodge < 350) return;
+    lastDodge = now;
+    var r = no.getBoundingClientRect();
+    if (!flying){
+      // leave the box and move around the whole screen
+      no.style.transition = 'none';
+      no.style.position = 'fixed';
+      no.style.left = r.left + 'px';
+      no.style.top = r.top + 'px';
+      void no.offsetWidth;
+      no.style.transition = '';
+      flying = true;
     }
-    if (!ok){ x = maxX; y = 4; }
-    no.style.left = x + 'px';
-    no.style.top = y + 'px';
+    var w = r.width, h = r.height, m = 12;
+    var W = document.documentElement.clientWidth || window.innerWidth, H = window.innerHeight;
+    var maxX = Math.max(m, W - w - m), maxY = Math.max(m, H - h - m);
+    var yr = yes.getBoundingClientRect();
+    var yz = {x: yr.left - 12, y: yr.top - 12, w: yr.width + 24, h: yr.height + 24};
+    var cx0 = r.left + w/2, cy0 = r.top + h/2;
+    var bx = m, by = m, best = -1;
+    for (var i=0;i<16;i++){
+      var x = m + Math.random()*(maxX - m), y = m + Math.random()*(maxY - m);
+      if (overlaps({x:x, y:y, w:w, h:h}, yz)) continue;
+      var d = Math.hypot(x + w/2 - cx0, y + h/2 - cy0);
+      if (d > best){ best = d; bx = x; by = y; }
+    }
+    no.style.left = bx + 'px';
+    no.style.top = by + 'px';
     dodges++;
     if (dodges >= MAX_DODGES){
       gaveUp = true;
@@ -208,6 +258,7 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
   function runAway(e){ if (!gaveUp){ if (e && e.cancelable) e.preventDefault(); dodge(); } }
   no.addEventListener('pointerenter', runAway);
   no.addEventListener('pointerdown', runAway);
+  no.addEventListener('touchstart', runAway, {passive:false});
   no.addEventListener('focus', runAway);
   no.addEventListener('click', function(e){
     if (!gaveUp){ e.preventDefault(); dodge(); return; }
@@ -215,12 +266,12 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
   });
   yes.addEventListener('click', startProcessing);
 
-  // quick fake processing, then the happy ending
+  // quick fake processing
   var steps = [
     'Reading your answer',
     'Checking if you are still mad',
+    'Still mad? Running it again',
     'Warming up the Kinder Joys',
-    'Practicing good behavior',
     'Done'
   ];
   var busy = false;
@@ -237,10 +288,10 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
       list.appendChild(li);
       return li;
     });
-    var gap = reduce ? 200 : 750, i = 0;
+    var gap = reduce ? 150 : 480, i = 0;
     (function next(){
       if (i > 0) lis[i-1].className = 'done';
-      if (i >= lis.length){ $('barFill').style.width = '100%'; setTimeout(finish, reduce ? 100 : 400); return; }
+      if (i >= lis.length){ $('barFill').style.width = '100%'; setTimeout(finish, reduce ? 100 : 250); return; }
       lis[i].className = 'doing';
       $('barFill').style.width = Math.round(((i+0.5)/lis.length)*100) + '%';
       i++;
@@ -249,9 +300,64 @@ h2{font-family:var(--display); font-weight:800; font-size:clamp(1.6rem,6vw,2.1re
   }
   function finish(){
     $('processing').hidden = true;
+    $('spinner').hidden = false;
+    drawWheel();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWheel);
+  }
+  function showVerdict(){
+    $('spinner').hidden = true;
     $('verdict').hidden = false;
     burst();
   }
+
+  // punishment wheel: always lands on "I forgive you" (last segment)
+  var LABELS = ['Beat me', 'Punch me', 'No phone 1 day', 'Dishes x7', '2x Kinder Joys', 'I forgive you'];
+  var wheelCv = $('wheelCv'), wheel = $('wheel'), spinTurns = 5, spinCount = 0;
+  function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function drawWheel(){
+    var s = wheelCv.clientWidth || 300, dpr = window.devicePixelRatio || 1;
+    wheelCv.width = Math.round(s*dpr); wheelCv.height = Math.round(s*dpr);
+    var g = wheelCv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, s, s);
+    var c = s/2, r = c - 4, n = LABELS.length, a = Math.PI*2/n;
+    var accent = cssVar('--accent'), ink = cssVar('--accent-ink'), soft = cssVar('--soft'), fg = cssVar('--fg');
+    var pink = cssVar('--pink'), onPink = cssVar('--on-pink'), line = cssVar('--line'), surface = cssVar('--surface');
+    for (var i=0;i<n;i++){
+      var start = -Math.PI/2 + i*a, end = start + a, last = (i === n-1), even = (i % 2 === 0);
+      g.beginPath(); g.moveTo(c, c); g.arc(c, c, r, start, end); g.closePath();
+      g.fillStyle = last ? pink : (even ? accent : soft); g.fill();
+      g.strokeStyle = surface; g.lineWidth = 2; g.stroke();
+      g.save(); g.translate(c, c); g.rotate(start + a/2);
+      g.textAlign = 'right'; g.textBaseline = 'middle';
+      g.fillStyle = last ? onPink : (even ? ink : fg);
+      g.font = '700 ' + Math.max(11, Math.round(s*0.042)) + 'px "DM Sans", system-ui, sans-serif';
+      g.fillText(LABELS[i], r - 12, 0);
+      g.restore();
+    }
+    g.beginPath(); g.arc(c, c, s*0.07, 0, Math.PI*2); g.fillStyle = surface; g.fill();
+    g.strokeStyle = line; g.lineWidth = 2; g.stroke();
+  }
+  window.addEventListener('resize', function(){ if (!$('spinner').hidden) drawWheel(); });
+  if (window.matchMedia){
+    var mq = window.matchMedia('(prefers-color-scheme: dark)');
+    if (mq.addEventListener) mq.addEventListener('change', function(){ if (!$('spinner').hidden) drawWheel(); });
+  }
+  function doSpin(){
+    $('spin').hidden = true;
+    $('retryBox').hidden = true;
+    $('spinMsg').textContent = 'Spinning...';
+    spinTurns += 5;
+    // the last segment's centre needs 30deg of clockwise rotation to sit under the pointer
+    var deg = spinTurns*360 + 30 + (Math.random()*24 - 12);
+    wheel.style.transform = 'rotate(' + deg + 'deg)';
+    spinCount++;
+    setTimeout(function(){
+      $('spinMsg').textContent = spinCount === 1 ? 'Punishment picked: I forgive you.' : 'Landed on I forgive you again.';
+      $('retryBox').hidden = false;
+    }, reduce ? 300 : 3300);
+  }
+  $('spin').addEventListener('click', doSpin);
+  $('retry').addEventListener('click', doSpin);
+  $('cont').addEventListener('click', showVerdict);
 
   // confetti
   var cv = $('confetti'), cx = cv.getContext('2d'), parts = [], raf = 0;
